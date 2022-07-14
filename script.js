@@ -69,6 +69,7 @@ const Navbar = () => {
 
 /** @type {React.FC} */
 const App = () => {
+  const [product, setProduct] = React.useState("");
   const [amount, setAmount] = React.useState("");
   const [paypayurl, setPaypayurl] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -80,17 +81,50 @@ const App = () => {
   React.useEffect(() => {
     console.log("load");
     axios.get("https://api.lisxck.fyi/stock")
-    .then((res) => {
-      setAmounts({
-        amount1: res.data.stock1.amount
-      });
-      setStocks({
-        stock1: res.data.stock1.stock
-      });
-    })
-    .catch(() => location.href = "/500/500.html")
-  }, [])
+      .then((res) => {
+        setAmounts({
+          amount1: res.data.stock1.amount
+        });
+        setStocks({
+          stock1: res.data.stock1.stock
+        });
+      })
+      .catch(() => location.href = "/500/500.html");
 
+  }, []);
+
+  function susumu(pn) {
+    setProduct(pn);
+  }
+
+  const buy = () => {
+    axios.post('https://api.lisxck.fyi/vending',
+      {
+        productname: product,
+        amount: amount,
+        paypayurl: paypayurl,
+        password: password,
+        mailaddress: mail
+      },
+      {
+        validateStatus: () => true,
+      }
+    )
+      .then(response => {
+        if (response.status === 200) {
+          localStorage.setItem('accounts', response.data.stock);
+          location.href = "./vending/success.html";
+        }
+        if (response.status === 400 || response.status === 403) {
+          alert("誤った情報が入力されています");
+          return;
+        }
+        if (response.status >= 500) {
+          alert("不明なエラーです")
+          return;
+        }
+      })
+  };
   return (
     <>
       <div className="payment" id="payment">
@@ -105,7 +139,7 @@ const App = () => {
           <TextField product="購入後にアカウントが送信されるメールアドレス" placeholder="info@lisxck.fyi" wrong={() => !mail}
             state={mail} setState={setMail} highlight="正しいメールアドレス" />
           <div className="buy-button">
-            <button className="btn btn-success" id="buy-button">購入</button>
+            <button className="btn btn-success" id="buy-button" onClick={() => buy()}>購入</button>
           </div>
         </Modal>
       </div>
@@ -113,7 +147,7 @@ const App = () => {
       <div className="products">
         <div className="card w-96 bg-base-100 shadow-xl" id="product">
           <figure>
-            <img src="Twitter.jpg" alt="Shoes" />
+            <img src="https://lisxck.fyi/Twitter.jpg" alt="Shoes" />
           </figure>
           <div className="card-body">
             <h2 className="card-title">TwitterOLDアカウント</h2>
@@ -125,7 +159,7 @@ const App = () => {
               <br />
               在庫 : {stocks.stock1}
             </p>
-            <div className="card-actions justify-end" click="getproduct('old')">
+            <div className="card-actions justify-end" onClick={() => susumu("old")}>
               <label for="my-modal" className="btn modal-button">購入に進む</label>
             </div>
           </div>
@@ -141,5 +175,5 @@ const App = () => {
 }
 
 const rootElement = document.getElementById("root");
-const root = ReactDOM.client.createRoot(rootElement);
+const root = ReactDOM.createRoot(rootElement);
 root.render(<App />)
